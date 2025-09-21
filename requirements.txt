@@ -1,3 +1,7 @@
+moviepy
+openai-whisper
+ocrmypdf
+easyocr
 striprtf
 python-pptx
 opencv-python
