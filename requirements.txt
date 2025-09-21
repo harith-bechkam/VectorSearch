@@ -1,2 +1,14 @@
+striprtf
+python-pptx
+opencv-python
+odfpy
+pytesseract
+pandas
+sentence-transformers
+matplotlib
+pillow
+PyMuPDF
+python-docx
+librosa
 fastapi
 uvicorn
