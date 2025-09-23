@@ -78,43 +78,43 @@ async def upload_file(file: UploadFile = File(...)):
     }
 
 
-# ---------------- Search Endpoint ----------------
 @app.get("/search")
 async def search(query: str = Query(...), top_k_files: int = 3, top_k_chunks: int = 5):
+    #Convert query to embedding
     query_emb = clip_model.encode(query, convert_to_numpy=True)
 
-    # Search top files
+    #Search main collection for top files
     file_results = collection_main.search(
         data=[query_emb],
         anns_field="full_embedding",
         param={"metric_type": "COSINE", "params": {"nprobe": 10}},
         limit=top_k_files,
-        output_fields=["file_name"]
+        output_fields=["file_name", "full_content"]
     )
 
     summary_input = f"Query: {query}\n\n"
 
+    #Iterate over top file hits
     for file_hit in file_results[0]:
         file_id = file_hit.id
         file_name = file_hit.entity.get("file_name")
+        file_content = file_hit.entity.get("full_content")
+        # summary_input += f"File: {file_name}\nFull content preview: {file_content}...\n"
 
-        # Search top chunks
+        #Search chunk collection for relevant chunks
         chunk_results = collection_chunks.search(
             data=[query_emb],
             anns_field="chunk_embedding",
             param={"metric_type": "COSINE", "params": {"nprobe": 10}},
             limit=top_k_chunks,
-            expr=f"file_id == {file_id}",
-            output_fields=["content_preview", "chunk_index"]
+            expr=f"file_id == {file_id}",  # only chunks from this file
+            output_fields=["chunk_content", "chunk_index"]
         )
 
-        summary_input += f"File: {file_name}\n"
         for chunk_hit in chunk_results[0]:
-            summary_input += f"Chunk {chunk_hit.entity.get('chunk_index')}: {chunk_hit.entity.get('content_preview')}\n"
+            summary_input += f"Content {chunk_hit.entity.get('chunk_index')}: {chunk_hit.entity.get('chunk_content')}...\n"
 
     return {"summary_input_for_llm": summary_input}
-
-
 if __name__ == "__main__":
     import uvicorn
 
